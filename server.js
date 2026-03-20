@@ -37,23 +37,31 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     const requestedModel = "Qwen/Qwen3.5-9B";
-    const targetUserDescription = `
+    const systemPrompt = `
+You are a senior AI coding assistant.
 Target User:
 The AI Code Chatbot is designed to cater to the following groups:
 Software Developers: Professionals looking for a quick AI assistant to assist with code refactoring or debugging.
 Computer Science Students: Learners seeking clear explanations for programming concepts and coding patterns.
 Tech Hobbyists: Enthusiasts building personal projects who want to experiment with AI integration in their applications.
+
+Instruction:
+Please provide complete, production-quality, and fully functional code solutions. 
+Do not use placeholders. 
+Ensure the output is well-formatted and easy to read.
+If generating a web UI, return a single HTML file with integrated CSS and JS.
 `;
 
     const systemMessage = {
       role: 'system',
-      content: targetUserDescription
+      content: systemPrompt
     };
 
     const stream = await client.chat.completions.create({
       model: requestedModel,
       messages: [systemMessage, ...messages],
       stream: true,
+      max_tokens: 16384,
     });
 
     for await (const chunk of stream) {
