@@ -12,6 +12,11 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Hugging Face Setup
 const hf = new HfInference(process.env.HF_API_KEY);
 
