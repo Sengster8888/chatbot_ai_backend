@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { HfInference } from '@huggingface/inference';
+import { OpenAI } from 'openai';
 
 dotenv.config();
 
@@ -17,8 +17,11 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Hugging Face Setup
-const hf = new HfInference(process.env.HF_API_KEY);
+// OpenAI / Hugging Face Router Setup
+const client = new OpenAI({
+  baseURL: "https://router.huggingface.co/v1",
+  apiKey: process.env.HF_TOKEN,
+});
 
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;
@@ -27,89 +30,48 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Messages array is required' });
   }
 
+  // Set headers for streaming (SSE)
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
   try {
-    // We expect the frontend to send an array of messages: [{ role: 'user', content: '...' }]
-    // We'll use the chatCompletion API if the model supports it, or textGeneration
-    
-    // Using a reliable model (Llama-3.1-8B-Instruct is highly compatible with Chat Completion API)
-    // const model = "meta-llama/Llama-3.1-8B-Instruct";
-    const model = "Qwen/Qwen2.5-Coder-7B-Instruct";
-    
-    // Detailed Expert UI/UX Prompt
-    const userInput = messages[messages.length - 1].content;
-    const prompt = `
-Act as a senior front-end developer and UI/UX designer.
-
-Create a modern, high-converting landing page for a premium AI tool called "Aura".
-
-### User Request:
-"${userInput}"
-
-### Design Requirements:
-- Use a clean, minimal, and visually impressive design suitable for a SaaS product
-- Apply consistent spacing with at least 2rem vertical whitespace between all sections
-- Use the "Inter" font family throughout the page
-- Primary color theme: Indigo-600 accents with subtle gradients
-- Add soft shadows and smooth hover transitions for interactive elements
-- Ensure the layout is fully responsive (mobile, tablet, desktop)
-
-### Layout Structure:
-1. **Navigation Bar**:
-   - Fixed at the top with glassmorphism effect (blur + transparency)
-   - Include logo (Aura), links (Features, Pricing, About), and CTA button ("Start Free Trial")
-2. **Hero Section**:
-   - Large gradient heading introducing Aura
-   - Short, compelling subheading
-   - Primary CTA button: "Start Free Trial"
-   - Optional secondary CTA: "Watch Demo"
-   - Include subtle background gradient or abstract shapes
-3. **Features Section**:
-   - Three-column responsive grid layout
-   - Each feature card includes: Icon, Title (Speed, Privacy, Global Search), and Short description
-   - Apply soft shadows, rounded corners, and hover effects
-4. **Optional Sections**:
-   - Testimonials/Social proof, Pricing preview, Footer with links/copyright
-
-### Technical Requirements:
-- Use semantic HTML5 (header, main, section, footer)
-- Use modern CSS (Flexbox/Grid)
-- Mandatory Base CSS Reset:
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; line-height: 1.6; }
-  .section { padding: 4rem 2rem; }
-- Keep JavaScript minimal
-- Clean, readable, and well-structured code
-
-### Output:
-- Return ONLY the complete HTML code (single file).
-- Ensure code is production-ready and easy to customize.
+    const requestedModel = "Qwen/Qwen3.5-9B";
+    const targetUserDescription = `
+Target User:
+The AI Code Chatbot is designed to cater to the following groups:
+Software Developers: Professionals looking for a quick AI assistant to assist with code refactoring or debugging.
+Computer Science Students: Learners seeking clear explanations for programming concepts and coding patterns.
+Tech Hobbyists: Enthusiasts building personal projects who want to experiment with AI integration in their applications.
 `;
 
     const systemMessage = {
       role: 'system',
-      content: prompt
+      content: targetUserDescription
     };
 
-    const response = await hf.chatCompletion({
-      model: model,
+    const stream = await client.chat.completions.create({
+      model: requestedModel,
       messages: [systemMessage, ...messages],
-      max_tokens: 2500,
+      stream: true,
     });
 
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        // Express will chunk this automatically if we use write()
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
 
-    const botResponse = response.choices[0].message.content;
-    res.json({ message: botResponse });
+    res.write('data: [DONE]\n\n');
+    res.end();
   } catch (error) {
-    console.error('Full Error from Hugging Face:', error);
+    console.error('Full Error from OpenAI/HF Router:', error);
     
-    // Attempt detailed error message
-    const errorMessage = error.httpResponse?.body?.error||  error.message|| 'Unknown error';
-    
-    res.status(500).json({ 
-      error: 'Failed to get response from AI',
-      details: errorMessage
-    });
+    const errorMessage = error.message || 'Unknown error';
+    res.write(`data: ${JSON.stringify({ error: 'Failed to get response from AI', details: errorMessage })}\n\n`);
+    res.end();
   }
 });
 
