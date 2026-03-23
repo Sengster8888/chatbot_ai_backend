@@ -3,10 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
 
+import * as prompts from './prompts/index.js';
+
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -24,7 +26,7 @@ const client = new OpenAI({
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, type } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Messages array is required' });
@@ -36,21 +38,23 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    const requestedModel = "Qwen/Qwen3.5-9B";
-    const systemPrompt = `
-You are a senior AI coding assistant.
-Target User:
-The AI Code Chatbot is designed to cater to the following groups:
-Software Developers: Professionals looking for a quick AI assistant to assist with code refactoring or debugging.
-Computer Science Students: Learners seeking clear explanations for programming concepts and coding patterns.
-Tech Hobbyists: Enthusiasts building personal projects who want to experiment with AI integration in their applications.
+    const requestedModel = "Qwen/Qwen2.5-Coder-32B-Instruct";
+    
+    // Select the appropriate prompt based on type
+    let systemPrompt = prompts.baseContext;
+    let finalMessages = [...messages];
 
-Instruction:
-Please provide complete, production-quality, and fully functional code solutions. 
-Do not use placeholders. 
-Ensure the output is well-formatted and easy to read.
-If generating a web UI, return a single HTML file with integrated CSS and JS.
-`;
+    if (type && prompts[`${type}Prompt`] && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'user') {
+        // Apply the specific prompt template to the last user message
+        const promptFn = prompts[`${type}Prompt`];
+        lastMessage.content = promptFn(lastMessage.content);
+        
+        // Remove the default system prompt if it was already there, or use baseContext
+        systemPrompt = "You are a senior AI coding assistant. Follow instructions precisely.";
+      }
+    }
 
     const systemMessage = {
       role: 'system',
@@ -59,7 +63,7 @@ If generating a web UI, return a single HTML file with integrated CSS and JS.
 
     const stream = await client.chat.completions.create({
       model: requestedModel,
-      messages: [systemMessage, ...messages],
+      messages: [systemMessage, ...finalMessages],
       stream: true,
       max_tokens: 16384,
     });
