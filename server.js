@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: 'https://chatbot-ai-frontend-xxxx.onrender.com'
+  origin: 'https://chatbot-ai-frontend-4ywg.onrender.com'
 }));
 app.use(express.json());
 
