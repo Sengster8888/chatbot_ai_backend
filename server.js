@@ -12,10 +12,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: [
-    'https://https://sparkly-kleicha-d8e422.netlify.app', // 🔁 Replace with your actual Netlify URL
-    'http://localhost:5173',
-  ]
+  origin: 'https://chatbot-ai-frontend-xxxx.onrender.com'
 }));
 app.use(express.json());
 
