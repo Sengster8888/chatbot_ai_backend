@@ -32,6 +32,7 @@ Instructions:
 - Return a SINGLE HTML file containing all HTML, CSS, and JS.
 - Use clean design, shadows, and modern typography.
 - Mobile-first responsive layout.
+- Ensure all interactive elements have hover effects and smooth transitions.
 
 User Request:
 "${userInput}"
@@ -49,32 +50,18 @@ IMPORTANT: You MUST generate the solution using ${lang} ONLY. Do not use any oth
 Instructions:
 - Provide the full implementation in ${lang}.
 - No placeholders.
-- After the code block, provide:
+- Following the code block, you MUST provide a detailed breakdown using these exact headers:
   ### Functionality
-  [Explanation]
+  [Explanation of what the code does]
   ### Logic
-  [Deep dive]
+  [Deep dive into the algorithmic or architectural choices]
   ### Key Steps
-  [Steps]
+  [Step-by-step walkthrough of the implementation]
 
 User Request:
 "${userInput}"
 `;
 
-/* =========================
-   DEBUG / FIX CODE
-========================= */
-export const debugPrompt = (code, lang = 'JavaScript') => `
-${baseContext}
-
-Task:
-Debug and fix the following ${lang} code. Provide the fixed version in ${lang}.
-
-Code:
-\`\`\`${lang}
-${code}
-\`\`\`
-`;
 
 /* =========================
    EXPLAIN CODE / CONCEPT
@@ -85,10 +72,15 @@ ${baseContext}
 Task:
 Explain the following ${lang} code or concept.
 
-Structure:
-### Functionality
-### Logic
-### Key Steps
+Instructions:
+- Provide a clear, educational breakdown.
+- Use the following structure:
+  ### Functionality
+  [General overview]
+  ### Logic
+  [Technical deep dive]
+  ### Key Steps
+  [Breaking down the process]
 
 Input:
 ${input}
