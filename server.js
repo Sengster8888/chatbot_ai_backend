@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: 'https://chatbot-ai-frontend-4ywg.onrender.com'
+  origin: ['https://chatbot-ai-frontend-4ywg.onrender.com', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001']
 }));
 app.use(express.json());
 
@@ -28,7 +28,7 @@ const client = new OpenAI({
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { messages, type } = req.body;
+  const { messages, type, lang } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Messages array is required' });
@@ -51,10 +51,10 @@ app.post('/api/chat', async (req, res) => {
       if (lastMessage.role === 'user') {
         // Apply the specific prompt template to the last user message
         const promptFn = prompts[`${type}Prompt`];
-        lastMessage.content = promptFn(lastMessage.content);
+        lastMessage.content = promptFn(lastMessage.content, lang);
         
-        // Remove the default system prompt if it was already there, or use baseContext
-        systemPrompt = "You are a senior AI coding assistant. Follow instructions precisely.";
+        // Reinforce the language in the system prompt
+        systemPrompt = `You are a senior AI coding assistant. You MUST provide the solution using ${lang} exclusively. Follow all instructions precisely.`;
       }
     }
 
