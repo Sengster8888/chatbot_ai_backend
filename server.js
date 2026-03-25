@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['https://chatbot-ai-frontend-4ywg.onrender.com', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001']
+  origin: ['https://chatbot-ai-frontend-5oa3.onrender.com', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001']
 }));
 app.use(express.json());
 
