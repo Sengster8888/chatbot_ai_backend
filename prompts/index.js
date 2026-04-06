@@ -85,3 +85,31 @@ Instructions:
 Input:
 ${input}
 `;
+
+/* =========================
+   GAME GENERATOR
+========================= */
+export const gamePrompt = (userInput) => `
+${baseContext}
+
+Task:
+Generate a high-quality, modern, and fully functional browser-based game using ONLY HTML, CSS, and JavaScript.
+
+Instructions:
+- Return a SINGLE HTML file containing all HTML, CSS, and JS.
+- Use HTML5 Canvas or modern DOM manipulation for game mechanics.
+- Include a beautiful, polished UI (start screen, HUD, game over screen).
+- **IMPORTANT**: HUD elements (Score, Power, Turns) must be positioned in a dedicated header or sidebar area, **ABOVE or OUTSIDE** the main gameplay canvas/container to avoid obstructing the action.
+- Implement smooth animations (60fps using requestAnimationFrame), particle effects, and responsive controls (keyboard/touch).
+- Ensure the game is visually stunning with gradients, shadows, and modern design principles.
+- Use a curated color palette and professional typography (e.g., from Google Fonts).
+- The game must be self-contained and ready to play immediately.
+- Focus on "Game Feel" (juice): screen shake, smooth transitions, and satisfying interactions.
+- Provide a clear, educational breakdown of the game logic after the code block.
+
+User Request:
+"${userInput}"
+`;
+
+
+
